@@ -11,7 +11,8 @@ import {
   TrendingUp, 
   MessageSquare,
   Mail,
-  Printer
+  Printer,
+  FileText
 } from "lucide-react";
 import { 
   INDICATORS, 
@@ -395,16 +396,10 @@ export default function App() {
                   <div className="pt-6 border-t border-border-theme flex flex-wrap gap-4 no-print">
                     <button 
                       onClick={() => window.print()}
-                      className="flex-1 min-w-[150px] py-3.5 bg-white border border-primary text-primary font-bold rounded-xl hover:bg-primary/5 transition-all"
+                      className="flex-1 min-w-[150px] py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-secondary transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
                     >
                       <Printer size={18} />
-                      طباعة الاستمارة
-                    </button>
-                    <button 
-                      className="hd-btn-primary flex-1 min-w-[150px] justify-center"
-                    >
-                      <Mail size={18} />
-                      إرسال الإيميل
+                      طباعة التقرير الشامل
                     </button>
                   </div>
                 </div>
@@ -430,11 +425,126 @@ export default function App() {
       </div>
     </div>
       
+      {/* Printable Report Content (Hidden on screen) */}
+      <div className="hidden print:block p-8 space-y-10 bg-white" id="printable-area">
+        <header className="text-center border-b-2 border-primary pb-6">
+          <h1 className="text-3xl font-bold text-primary mb-2">استمارة الزيارة الإشرافية</h1>
+          <p className="text-gray-600">تقرير زيارة معلم مادة / مجال</p>
+        </header>
+
+        {/* 1. Visit Details Table */}
+        <section>
+          <h2 className="text-xl font-bold text-primary mb-4 flex items-center gap-2 border-r-4 border-primary pr-3">
+            <User size={20} />
+            البيانات الأساسية
+          </h2>
+          <div className="grid grid-cols-2 border border-gray-300 rounded-lg overflow-hidden text-sm">
+            <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">صفة الزائر</div>
+            <div className="p-3 border-b border-gray-300">{visitInfo.visitorRole}</div>
+            
+            <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">المعلم المزور</div>
+            <div className="p-3 border-b border-gray-300">{visitInfo.teacherName}</div>
+            
+            <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">التاريخ واليوم</div>
+            <div className="p-3 border-b border-gray-300">{visitInfo.visitDate} - {visitInfo.visitDay}</div>
+            
+            <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">المادة / المجال</div>
+            <div className="p-3 border-b border-gray-300">{visitInfo.subject}</div>
+
+            <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">الصف والفصل</div>
+            <div className="p-3 border-b border-gray-300">{visitInfo.grade} - فصل {visitInfo.section}</div>
+
+            <div className="p-3 bg-gray-50 font-bold border-l border-gray-300">عنوان الدرس</div>
+            <div className="p-3">{visitInfo.lessonTitle}</div>
+          </div>
+        </section>
+
+        {/* 2. Evaluation Items */}
+        <section>
+          <h2 className="text-xl font-bold text-primary mb-4 flex items-center gap-2 border-r-4 border-primary pr-3">
+            <Award size={20} />
+            تقديرات بنود التقييم
+          </h2>
+          <table className="w-full border-collapse border border-gray-300 text-xs">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 p-2 text-right">رقم البند</th>
+                <th className="border border-gray-300 p-2 text-right">المجال / المعيار</th>
+                <th className="border border-gray-300 p-2 text-right">تقدير الأداء</th>
+              </tr>
+            </thead>
+            <tbody>
+              {INDICATORS.map(ind => (
+                <tr key={ind.id}>
+                  <td className="border border-gray-300 p-2 text-center font-bold">{ind.id}</td>
+                  <td className="border border-gray-300 p-2">
+                    <span className="font-bold text-xs text-primary">{ind.domain}</span><br />
+                    {ind.text}
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center font-bold">
+                    {getRatingLabel(ratings[ind.id] || 0)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        {/* 3. AI Generated Report */}
+        <section className="space-y-6">
+          <h2 className="text-xl font-bold text-primary mb-4 flex items-center gap-2 border-r-4 border-primary pr-3">
+            <FileText size={20} />
+            التقرير الفني والمقترحات
+          </h2>
+          
+          <div className="space-y-4">
+            <div className="p-4 border-r-4 border-emerald-500 bg-emerald-50/30">
+              <h4 className="font-bold text-emerald-800 mb-1">جوانب الإجادة وأدلتها:</h4>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.excellence}</p>
+            </div>
+
+            {report.improvement && (
+              <div className="p-4 border-r-4 border-rose-500 bg-rose-50/30">
+                <h4 className="font-bold text-rose-800 mb-1">الجوانب التي تحتاج إلى تطوير وأدلتها:</h4>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.improvement}</p>
+              </div>
+            )}
+
+            <div className="p-4 border-r-4 border-amber-500 bg-amber-50/30">
+              <h4 className="font-bold text-amber-800 mb-1">التوصيات الإجرائية:</h4>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.recommendations}</p>
+            </div>
+
+            <div className="p-4 border-r-4 border-blue-500 bg-blue-50/30">
+              <h4 className="font-bold text-blue-800 mb-1">الدعم المقدم للمعلم:</h4>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.support}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer Signature */}
+        <footer className="mt-12 pt-8 border-t flex justify-between items-center text-sm">
+          <div>
+            توقيع المعلم: ...............................
+          </div>
+          <div className="text-left">
+            توقيع الزائر: ...............................
+          </div>
+        </footer>
+      </div>
+
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white; padding: 0; }
-          .container { max-width: 100%; }
+          body { background: white !important; margin: 0; padding: 0; }
+          .hd-container { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; }
+          main { display: none !important; }
+          .hd-header { display: none !important; }
+          .hd-footer { display: none !important; }
+          #printable-area { display: block !important; visibility: visible !important; }
+          table { page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          section { page-break-inside: avoid; margin-bottom: 2rem; }
         }
       `}</style>
     </div>
