@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Tajawal", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #1e3c72;
+  --color-accent: #2a5298;
+  --color-bg: #f8fafc;
+  --color-text: #1e293b;
+  --color-border-theme: #e2e8f0;
+}
+
+body {
+  @apply font-sans antialiased bg-bg text-text;
+}
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* High Density Theme Specifics */
+.hd-container {
+  @apply bg-white rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.05)] border border-border-theme overflow-hidden;
+}
+
+.hd-header {
+  @apply bg-primary text-white p-6 md:px-10 md:py-8;
+}
+
+.hd-form-grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-6 p-10;
+}
+
+.hd-input {
+  @apply w-full p-3 bg-[#fdfdfd] border border-border-theme rounded-lg text-sm md:text-base outline-none focus:border-accent focus:ring-4 focus:ring-primary/10 transition-all;
+}
+
+.hd-label {
+  @apply block mb-2 text-sm font-semibold text-[#475569];
+}
+
+.hd-btn-primary {
+  @apply bg-primary text-white px-12 py-3.5 rounded-xl text-base font-bold flex items-center gap-3 transition-all hover:bg-accent active:scale-95 shadow-md;
+}
+
+.hd-footer {
+  @apply mt-8 text-center text-[13px] leading-relaxed text-[#64748b];
+}
+
+.hd-footer b {
+  @apply text-primary text-[15px];
+}
+
