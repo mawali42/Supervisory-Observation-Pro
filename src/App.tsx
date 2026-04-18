@@ -80,7 +80,7 @@ export default function App() {
   const report = useMemo(() => {
     if (step !== 3) return { excellence: "", improvement: "", recommendations: "", support: "" };
 
-    const excellenceItems = INDICATORS.filter(ind => ratings[ind.id] === 1 || ratings[ind.id] === 2)
+    const excellenceItems = INDICATORS.filter(ind => ratings[ind.id] !== undefined && (ratings[ind.id] === 1 || ratings[ind.id] === 2))
       .slice(0, 3);
     
     const improvementItems = INDICATORS.filter(ind => ratings[ind.id] !== undefined && ratings[ind.id] >= 3)
@@ -93,7 +93,7 @@ export default function App() {
 
     const improvementText = improvementItems.length > 0 ? improvementItems.map((ind) => {
       const optionText = ind.options.find(opt => opt.value === ratings[ind.id])?.text || "";
-      return `${optionText} وثبت ذلك من خلال ${ind.improvementEvidence}`;
+      return `${optionText}. وثبت ذلك من خلال ${ind.improvementEvidence}`;
     }).join(" و") : "";
 
     // Recommendations derived from indicators
