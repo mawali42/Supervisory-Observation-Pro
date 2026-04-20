@@ -13,6 +13,7 @@ export interface VisitInfo {
 export interface RatingOption {
   value: number;
   text: string;
+  hint?: string;
 }
 
 export interface Indicator {
@@ -25,6 +26,7 @@ export interface Indicator {
   improvementEvidence: string;
   recommendation: string;
   support: string;
+  hint?: string;
 }
 
 export interface EvaluationState {

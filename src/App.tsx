@@ -12,7 +12,8 @@ import {
   MessageSquare,
   Mail,
   Printer,
-  FileText
+  FileText,
+  Info
 } from "lucide-react";
 import { 
   INDICATORS, 
@@ -38,6 +39,7 @@ export default function App() {
   });
 
   const [ratings, setRatings] = useState<EvaluationState>({});
+  const [activeHint, setActiveHint] = useState<number | null>(null);
 
   const handleVisitInfoChange = (field: keyof VisitInfo, value: string) => {
     setVisitInfo((prev) => ({ ...prev, [field]: value }));
@@ -295,7 +297,18 @@ export default function App() {
                           
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                             <div className="md:col-span-3 space-y-2">
-                              <label className="hd-label text-xs opacity-60">وصف الانتشار</label>
+                              <div className="flex items-center justify-between">
+                                <label className="hd-label text-xs opacity-60">وصف الانتشار</label>
+                                {ind.hint && (
+                                  <button 
+                                    onClick={() => setActiveHint(activeHint === ind.id ? null : ind.id)}
+                                    className={`p-1 rounded-full transition-colors ${activeHint === ind.id ? 'bg-primary text-white' : 'text-primary hover:bg-primary/10'}`}
+                                    title="توضيح وصف الانتشار"
+                                  >
+                                    <Info size={14} />
+                                  </button>
+                                )}
+                              </div>
                               <select
                                 value={ratings[ind.id] || ""}
                                 onChange={(e) => handleRatingChange(ind.id, parseInt(e.target.value))}
@@ -306,6 +319,55 @@ export default function App() {
                                   <option key={opt.value} value={opt.value}>{opt.text}</option>
                                 ))}
                               </select>
+
+                              {/* Dynamic Option-based Hint */}
+                              {ratings[ind.id] && ind.options.find(o => o.value === ratings[ind.id])?.hint && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: -5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="mt-2 p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-[11px] text-emerald-800 leading-relaxed shadow-sm"
+                                >
+                                  <div className="flex gap-2">
+                                    <div className="shrink-0 w-1 h-auto bg-emerald-400 rounded-full" />
+                                    <p className="font-medium">{ind.options.find(o => o.value === ratings[ind.id])?.hint}</p>
+                                  </div>
+                                </motion.div>
+                              )}
+
+                              <AnimatePresence>
+                                {activeHint === ind.id && (
+                                  <motion.div 
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3">
+                                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-primary/10">
+                                        <Info size={16} className="text-primary" />
+                                        <span className="text-xs font-bold text-primary italic">دليل التمييز بين مستويات وصف الانتشار:</span>
+                                      </div>
+                                      <div className="grid gap-2">
+                                        {ind.options.map((opt) => (
+                                          <div key={opt.value} className="flex gap-3 text-[11px] bg-white/50 p-2 rounded-lg border border-transparent hover:border-primary/20 transition-all">
+                                            <div className={`w-16 shrink-0 font-bold flex items-center justify-center rounded px-1 text-center text-[10px] ${getRatingColor(opt.value)}`}>
+                                              {getRatingLabel(opt.value)}
+                                            </div>
+                                            <div className="text-text leading-relaxed">
+                                              {opt.hint || opt.text}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      {ind.hint && (
+                                        <div className="pt-2 mt-2 border-t border-primary/10 text-[10px] text-primary/70 font-medium text-center">
+                                          {ind.hint}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
                             <div className="space-y-2">
                               <label className="hd-label text-xs opacity-60 text-center">التقدير</label>
