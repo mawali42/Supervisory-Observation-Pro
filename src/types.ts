@@ -1,5 +1,6 @@
 export interface VisitInfo {
   visitorRole: string;
+  visitorName: string;
   teacherName: string;
   visitDate: string;
   visitDay: string;

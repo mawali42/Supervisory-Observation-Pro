@@ -13,7 +13,8 @@ import {
   Mail,
   Printer,
   FileText,
-  Info
+  Info,
+  RotateCcw
 } from "lucide-react";
 import { 
   INDICATORS, 
@@ -28,6 +29,7 @@ export default function App() {
   const [step, setStep] = useState(1);
   const [visitInfo, setVisitInfo] = useState<VisitInfo>({
     visitorRole: "",
+    visitorName: "",
     teacherName: "",
     visitDate: "",
     visitDay: "",
@@ -40,6 +42,7 @@ export default function App() {
 
   const [ratings, setRatings] = useState<EvaluationState>({});
   const [activeHint, setActiveHint] = useState<number | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const handleVisitInfoChange = (field: keyof VisitInfo, value: string) => {
     setVisitInfo((prev) => ({ ...prev, [field]: value }));
@@ -47,6 +50,24 @@ export default function App() {
 
   const handleRatingChange = (indicatorId: number, value: number) => {
     setRatings((prev) => ({ ...prev, [indicatorId]: value }));
+  };
+
+  const resetForm = () => {
+    setStep(1);
+    setVisitInfo({
+      visitorRole: "",
+      visitorName: "",
+      teacherName: "",
+      visitDate: "",
+      visitDay: "",
+      subject: "",
+      period: "",
+      grade: "",
+      section: "",
+      lessonTitle: "",
+    });
+    setRatings({});
+    setShowResetConfirm(false);
   };
 
   const isStep1Valid = useMemo(() => {
@@ -158,6 +179,17 @@ export default function App() {
                     <option value="">اختر الصفة...</option>
                     {VISITOR_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
                   </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="hd-label">اسم الزائر</label>
+                  <input
+                    type="text"
+                    placeholder="أدخل اسم الزائر"
+                    value={visitInfo.visitorName}
+                    onChange={(e) => handleVisitInfoChange("visitorName", e.target.value)}
+                    className="hd-input"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -457,12 +489,39 @@ export default function App() {
 
                   <div className="pt-6 border-t border-border-theme flex flex-wrap gap-4 no-print">
                     <button 
-                      onClick={() => window.print()}
+                      onClick={() => {
+                        window.focus();
+                        window.print();
+                      }}
                       className="flex-1 min-w-[150px] py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-secondary transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
                     >
                       <Printer size={18} />
                       طباعة التقرير الشامل
                     </button>
+                    {!showResetConfirm ? (
+                      <button 
+                        onClick={() => setShowResetConfirm(true)}
+                        className="flex-1 min-w-[150px] py-3.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                      >
+                        <RotateCcw size={18} />
+                        زيارة جديدة (إفراغ الحقول)
+                      </button>
+                    ) : (
+                      <div className="flex-1 flex gap-2">
+                        <button 
+                          onClick={resetForm}
+                          className="flex-1 py-3.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all text-xs"
+                        >
+                          تأكيد المسح؟
+                        </button>
+                        <button 
+                          onClick={() => setShowResetConfirm(false)}
+                          className="flex-1 py-3.5 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all text-xs"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -503,6 +562,9 @@ export default function App() {
           <div className="grid grid-cols-2 border border-gray-300 rounded-lg overflow-hidden text-sm">
             <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">صفة الزائر</div>
             <div className="p-3 border-b border-gray-300">{visitInfo.visitorRole}</div>
+
+            <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">اسم الزائر</div>
+            <div className="p-3 border-b border-gray-300">{visitInfo.visitorName}</div>
             
             <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">المعلم المزور</div>
             <div className="p-3 border-b border-gray-300">{visitInfo.teacherName}</div>
