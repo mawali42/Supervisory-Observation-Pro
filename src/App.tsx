@@ -111,13 +111,13 @@ export default function App() {
 
     const excellenceText = excellenceItems.map((ind) => {
       const optionText = ind.options.find(opt => opt.value === ratings[ind.id])?.text || "";
-      return `${optionText} وثبت ذلك من خلال ${ind.goodEvidence}`;
-    }).join(" و");
+      return `في معيار (${ind.standard}): ${optionText}. وثبت ذلك من خلال ${ind.goodEvidence}`;
+    }).join("\n\n");
 
     const improvementText = improvementItems.length > 0 ? improvementItems.map((ind) => {
       const optionText = ind.options.find(opt => opt.value === ratings[ind.id])?.text || "";
-      return `${optionText}. وثبت ذلك من خلال ${ind.improvementEvidence}`;
-    }).join(" و") : "";
+      return `في معيار (${ind.standard}): ${optionText}. وثبت ذلك من خلال ${ind.improvementEvidence}`;
+    }).join("\n\n") : "";
 
     // Recommendations derived from indicators
     const recs = [
