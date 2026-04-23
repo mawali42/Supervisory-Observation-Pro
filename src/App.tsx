@@ -575,6 +575,9 @@ export default function App() {
             <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">المادة / المجال</div>
             <div className="p-3 border-b border-gray-300">{visitInfo.subject}</div>
 
+            <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">الحصة</div>
+            <div className="p-3 border-b border-gray-300">{visitInfo.period}</div>
+
             <div className="p-3 bg-gray-50 font-bold border-b border-l border-gray-300">الصف والفصل</div>
             <div className="p-3 border-b border-gray-300">{visitInfo.grade} - فصل {visitInfo.section}</div>
 
