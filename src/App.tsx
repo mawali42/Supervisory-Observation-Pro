@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   ClipboardCheck, 
@@ -14,7 +14,9 @@ import {
   Printer,
   FileText,
   Info,
-  RotateCcw
+  RotateCcw,
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import { 
   INDICATORS, 
@@ -24,9 +26,12 @@ import {
   GRADES_AR 
 } from "./constants";
 import { VisitInfo, EvaluationState } from "./types";
+import { generateProfessionalReport, GeneratedReport } from "./services/geminiService";
 
 export default function App() {
   const [step, setStep] = useState(1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedReport, setGeneratedReport] = useState<GeneratedReport | null>(null);
   const [visitInfo, setVisitInfo] = useState<VisitInfo>({
     visitorRole: "",
     visitorName: "",
@@ -50,10 +55,53 @@ export default function App() {
 
   const handleRatingChange = (indicatorId: number, value: number) => {
     setRatings((prev) => ({ ...prev, [indicatorId]: value }));
+    // Invalidate report if ratings change
+    setGeneratedReport(null);
   };
+
+  const handleGenerateReport = async () => {
+    setStep(3);
+    if (generatedReport) return;
+
+    setIsGenerating(true);
+    const excellenceItems = INDICATORS
+      .filter(ind => ratings[ind.id] !== undefined && (ratings[ind.id] === 1 || ratings[ind.id] === 2))
+      .map(ind => ({ indicator: ind, rating: ratings[ind.id]! }));
+    
+    const improvementItems = INDICATORS
+      .filter(ind => ratings[ind.id] !== undefined && ratings[ind.id] >= 3)
+      .map(ind => ({ indicator: ind, rating: ratings[ind.id]! }));
+
+    // Force prompt to focus only on recommendations and support since we handle excellence/improvement statically
+    const result = await generateProfessionalReport(excellenceItems, improvementItems);
+    setGeneratedReport(result);
+    setIsGenerating(false);
+  };
+
+  const staticReport = useMemo(() => {
+    const excellenceEntries = INDICATORS
+      .filter(ind => ratings[ind.id] !== undefined && (ratings[ind.id] === 1 || ratings[ind.id] === 2))
+      .map(ind => {
+        const optionText = ind.options.find(opt => opt.value === ratings[ind.id])?.text || "";
+        return `في معيار (${ind.standard}): ${optionText}. وثبت ذلك من خلال ${ind.goodEvidence}`;
+      });
+
+    const improvementEntries = INDICATORS
+      .filter(ind => ratings[ind.id] !== undefined && ratings[ind.id] >= 3)
+      .map(ind => {
+        const optionText = ind.options.find(opt => opt.value === ratings[ind.id])?.text || "";
+        return `في معيار (${ind.standard}): ${optionText}. وثبت ذلك من خلال ${ind.improvementEvidence}`;
+      });
+
+    return {
+      excellence: excellenceEntries.join("\n\n"),
+      improvement: improvementEntries.join("\n\n")
+    };
+  }, [ratings]);
 
   const resetForm = () => {
     setStep(1);
+    setGeneratedReport(null);
     setVisitInfo({
       visitorRole: "",
       visitorName: "",
@@ -99,45 +147,6 @@ export default function App() {
       default: return "bg-gray-100 border-gray-200 text-gray-400";
     }
   };
-
-  const report = useMemo(() => {
-    if (step !== 3) return { excellence: "", improvement: "", recommendations: "", support: "" };
-
-    const excellenceItems = INDICATORS.filter(ind => ratings[ind.id] !== undefined && (ratings[ind.id] === 1 || ratings[ind.id] === 2))
-      .slice(0, 3);
-    
-    const improvementItems = INDICATORS.filter(ind => ratings[ind.id] !== undefined && ratings[ind.id] >= 3)
-      .slice(0, 3);
-
-    const excellenceText = excellenceItems.map((ind) => {
-      const optionText = ind.options.find(opt => opt.value === ratings[ind.id])?.text || "";
-      return `في معيار (${ind.standard}): ${optionText}. وثبت ذلك من خلال ${ind.goodEvidence}`;
-    }).join("\n\n");
-
-    const improvementText = improvementItems.length > 0 ? improvementItems.map((ind) => {
-      const optionText = ind.options.find(opt => opt.value === ratings[ind.id])?.text || "";
-      return `في معيار (${ind.standard}): ${optionText}. وثبت ذلك من خلال ${ind.improvementEvidence}`;
-    }).join("\n\n") : "";
-
-    // Recommendations derived from indicators
-    const recs = [
-      ...excellenceItems.map(i => i.recommendation),
-      ...improvementItems.map(i => i.recommendation)
-    ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 3).join("، و");
-
-    // Support derived from indicators
-    const supportTxt = [
-      ...excellenceItems.map(i => i.support),
-      ...improvementItems.map(i => i.support)
-    ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 3).join("، و");
-
-    return { 
-      excellence: excellenceText, 
-      improvement: improvementText,
-      recommendations: recs,
-      support: supportTxt
-    };
-  }, [ratings, step]);
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8" dir="rtl">
@@ -424,10 +433,10 @@ export default function App() {
                   </button>
                   <button
                     disabled={!isStep2Valid}
-                    onClick={() => setStep(3)}
+                    onClick={handleGenerateReport}
                     className={`hd-btn-primary ${!isStep2Valid && 'opacity-50 cursor-not-allowed'}`}
                   >
-                    توليد التقرير النهائي
+                    توليد التقرير الذكي (AI)
                     <ChevronLeft size={18} />
                   </button>
                 </div>
@@ -441,94 +450,130 @@ export default function App() {
                 animate={{ opacity: 1 }}
                 className="p-6 md:p-10 space-y-8"
               >
-                <div className="bg-primary/5 border-2 border-primary/10 rounded-2xl p-6 md:p-8 space-y-8">
-                  <div className="flex items-center gap-3 text-primary mb-2">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <MessageSquare size={24} />
+                {isGenerating ? (
+                   <div className="bg-primary/5 border-2 border-primary/10 rounded-2xl p-12 text-center space-y-6">
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                        className="inline-block p-4 bg-primary/10 rounded-full text-primary"
+                      >
+                        <RotateCcw size={40} />
+                      </motion.div>
+                      <div>
+                        <h3 className="text-xl font-bold text-primary mb-2">جاري تحليل البيانات وصياغة التقرير...</h3>
+                        <p className="text-sm text-gray-500">يقوم الذكاء الاصطناعي الآن بكتابة توصيات ودعم مهني مخصص للمعلم</p>
+                      </div>
+                      <div className="flex justify-center gap-1">
+                        {[0, 1, 2].map(i => (
+                          <motion.div 
+                            key={i}
+                            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                            transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
+                            className="w-2 h-2 bg-primary rounded-full"
+                          />
+                        ))}
+                      </div>
+                   </div>
+                ) : (
+                  <div className="bg-primary/5 border-2 border-primary/10 rounded-2xl p-6 md:p-8 space-y-8">
+                    <div className="flex items-center justify-between gap-3 text-primary mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Sparkles size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold">التقرير التحليلي الذكي (AI)</h3>
+                      </div>
+                      <button 
+                        onClick={() => { setGeneratedReport(null); handleGenerateReport(); }}
+                        className="text-xs font-bold bg-white px-3 py-1.5 rounded-lg border border-primary/20 hover:bg-primary/5 transition-all flex items-center gap-2 no-print"
+                      >
+                        <RotateCcw size={14} />
+                        توليد نسخة أخرى
+                      </button>
                     </div>
-                    <h3 className="text-xl font-bold">التقرير التحليلي الذكي</h3>
-                  </div>
 
-                  <div className="space-y-4">
-                    <label className="hd-label text-primary">جوانب الإجادة وأدلتها</label>
-                    <textarea
-                      readOnly
-                      value={report.excellence}
-                      className="w-full p-5 h-48 bg-white border border-border-theme rounded-xl shadow-inner outline-none text-text leading-relaxed resize-none text-sm md:text-base font-medium"
-                    />
-                  </div>
-
-                  {report.improvement && (
                     <div className="space-y-4">
-                      <label className="hd-label text-rose-600">الجوانب التي تحتاج إلى تطوير وأدلتها</label>
+                      <label className="hd-label text-primary">جوانب الإجادة وأدلتها (من واقع الممارسة)</label>
                       <textarea
                         readOnly
-                        value={report.improvement}
+                        value={staticReport.excellence}
                         className="w-full p-5 h-48 bg-white border border-border-theme rounded-xl shadow-inner outline-none text-text leading-relaxed resize-none text-sm md:text-base font-medium"
                       />
                     </div>
-                  )}
 
-                  <div className="space-y-4">
-                    <label className="hd-label text-emerald-600">التوصيات</label>
-                    <textarea
-                      readOnly
-                      value={report.recommendations}
-                      className="w-full p-5 h-40 bg-white border border-border-theme rounded-xl shadow-inner outline-none text-text leading-relaxed resize-none text-sm md:text-base font-medium"
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="hd-label text-blue-600">الدعم المقدم</label>
-                    <textarea
-                      readOnly
-                      value={report.support}
-                      className="w-full p-5 h-40 bg-white border border-border-theme rounded-xl shadow-inner outline-none text-text leading-relaxed resize-none text-sm md:text-base font-medium"
-                    />
-                  </div>
-
-                  <div className="pt-6 border-t border-border-theme flex flex-wrap gap-4 no-print">
-                    <button 
-                      onClick={() => {
-                        window.focus();
-                        window.print();
-                      }}
-                      className="flex-1 min-w-[150px] py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-secondary transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
-                    >
-                      <Printer size={18} />
-                      طباعة التقرير الشامل
-                    </button>
-                    {!showResetConfirm ? (
-                      <button 
-                        onClick={() => setShowResetConfirm(true)}
-                        className="flex-1 min-w-[150px] py-3.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
-                      >
-                        <RotateCcw size={18} />
-                        زيارة جديدة (إفراغ الحقول)
-                      </button>
-                    ) : (
-                      <div className="flex-1 flex gap-2">
-                        <button 
-                          onClick={resetForm}
-                          className="flex-1 py-3.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all text-xs"
-                        >
-                          تأكيد المسح؟
-                        </button>
-                        <button 
-                          onClick={() => setShowResetConfirm(false)}
-                          className="flex-1 py-3.5 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all text-xs"
-                        >
-                          إلغاء
-                        </button>
+                    {staticReport.improvement && (
+                      <div className="space-y-4">
+                        <label className="hd-label text-rose-600">الجوانب التي تحتاج إلى تطوير وأدلتها (من واقع الممارسة)</label>
+                        <textarea
+                          readOnly
+                          value={staticReport.improvement}
+                          className="w-full p-5 h-48 bg-white border border-border-theme rounded-xl shadow-inner outline-none text-text leading-relaxed resize-none text-sm md:text-base font-medium"
+                        />
                       </div>
                     )}
+
+                    <div className="space-y-4">
+                      <label className="hd-label text-emerald-600">التوصيات الإجرائية (AI)</label>
+                      <textarea
+                        readOnly
+                        value={generatedReport?.recommendations || ""}
+                        className="w-full p-5 h-40 bg-white border border-border-theme rounded-xl shadow-inner outline-none text-text leading-relaxed resize-none text-sm md:text-base font-medium"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="hd-label text-blue-600">الدعم المهني المقترح (AI)</label>
+                      <textarea
+                        readOnly
+                        value={generatedReport?.support || ""}
+                        className="w-full p-5 h-40 bg-white border border-border-theme rounded-xl shadow-inner outline-none text-text leading-relaxed resize-none text-sm md:text-base font-medium"
+                      />
+                    </div>
+
+                    <div className="pt-6 border-t border-border-theme flex flex-wrap gap-4 no-print">
+                      <button 
+                        onClick={() => {
+                          window.focus();
+                          window.print();
+                        }}
+                        className="flex-1 min-w-[150px] py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-secondary transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                      >
+                        <Printer size={18} />
+                        طباعة التقرير الشامل
+                      </button>
+                      {!showResetConfirm ? (
+                        <button 
+                          onClick={() => setShowResetConfirm(true)}
+                          className="flex-1 min-w-[150px] py-3.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                        >
+                          <RotateCcw size={18} />
+                          زيارة جديدة (إفراغ الحقول)
+                        </button>
+                      ) : (
+                        <div className="flex-1 flex gap-2">
+                          <button 
+                            onClick={resetForm}
+                            className="flex-1 py-3.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all text-xs"
+                          >
+                            تأكيد المسح؟
+                          </button>
+                          <button 
+                            onClick={() => setShowResetConfirm(false)}
+                            className="flex-1 py-3.5 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all text-xs"
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex justify-center no-print">
                   <button
+                    disabled={isGenerating}
                     onClick={() => setStep(2)}
-                    className="px-8 py-3 text-gray-400 hover:text-gray-600 font-bold transition-all flex items-center gap-2"
+                    className={`px-8 py-3 text-gray-400 hover:text-gray-600 font-bold transition-all flex items-center gap-2 ${isGenerating && 'opacity-20'}`}
                   >
                     <ChevronRight size={18} />
                     الرجوع لتعديل التقييم
@@ -617,34 +662,34 @@ export default function App() {
           </table>
         </section>
 
-        {/* 3. AI Generated Report */}
+        {/* 3. Final Report Summary */}
         <section className="space-y-6">
           <h2 className="text-xl font-bold text-primary mb-4 flex items-center gap-2 border-r-4 border-primary pr-3">
             <FileText size={20} />
-            التقرير الفني والمقترحات
+            التقرير الفني والتوصيات (مدعوم بالذكاء الاصطناعي)
           </h2>
           
           <div className="space-y-4">
             <div className="p-4 border-r-4 border-emerald-500 bg-emerald-50/30">
-              <h4 className="font-bold text-emerald-800 mb-1">جوانب الإجادة وأدلتها:</h4>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.excellence}</p>
+              <h4 className="font-bold text-emerald-800 mb-1">جوانب الإجادة وأدلتها (وصف ممارسات):</h4>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{staticReport.excellence}</p>
             </div>
 
-            {report.improvement && (
+            {staticReport.improvement && (
               <div className="p-4 border-r-4 border-rose-500 bg-rose-50/30">
-                <h4 className="font-bold text-rose-800 mb-1">الجوانب التي تحتاج إلى تطوير وأدلتها:</h4>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.improvement}</p>
+                <h4 className="font-bold text-rose-800 mb-1">الجوانب التي تحتاج إلى تطوير وأدلتها (وصف ممارسات):</h4>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{staticReport.improvement}</p>
               </div>
             )}
 
             <div className="p-4 border-r-4 border-amber-500 bg-amber-50/30">
-              <h4 className="font-bold text-amber-800 mb-1">التوصيات الإجرائية:</h4>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.recommendations}</p>
+              <h4 className="font-bold text-amber-800 mb-1">التوصيات الإجرائية (AI):</h4>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedReport?.recommendations}</p>
             </div>
 
             <div className="p-4 border-r-4 border-blue-500 bg-blue-50/30">
-              <h4 className="font-bold text-blue-800 mb-1">الدعم المقدم للمعلم:</h4>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{report.support}</p>
+              <h4 className="font-bold text-blue-800 mb-1">الدعم المهني المقترح (AI):</h4>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedReport?.support}</p>
             </div>
           </div>
         </section>
