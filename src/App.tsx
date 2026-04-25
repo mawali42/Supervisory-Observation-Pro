@@ -316,9 +316,14 @@ export default function App() {
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="p-6 md:p-10 space-y-8"
               >
-                {Array.from(new Set(INDICATORS.map(i => i.domain))).map(domain => (
-                  <div key={domain} className="border border-border-theme rounded-xl overflow-hidden bg-[#fafbfc]">
-                    <div className="bg-primary/5 px-6 py-4 border-b border-border-theme">
+                {Array.from(new Set(INDICATORS.map(i => i.domain))).map(domain => {
+                  const hasActiveInDomain = INDICATORS.some(i => i.domain === domain && i.id === activeHint);
+                  return (
+                    <div 
+                      key={domain} 
+                      className={`border border-border-theme rounded-xl bg-[#fafbfc] transition-all ${hasActiveInDomain ? 'relative z-40 ring-1 ring-primary/10 shadow-lg' : 'relative z-0'}`}
+                    >
+                    <div className="bg-primary/5 px-6 py-4 border-b border-border-theme rounded-t-xl">
                       <h3 className="text-primary font-bold text-lg flex items-center gap-2">
                         <Award size={20} />
                         المجال: {domain}
@@ -326,7 +331,10 @@ export default function App() {
                     </div>
                     <div className="divide-y divide-border-theme bg-white">
                       {INDICATORS.filter(i => i.domain === domain).map(ind => (
-                        <div key={ind.id} className="p-6 space-y-4">
+                        <div 
+                          key={ind.id} 
+                          className={`p-6 space-y-4 transition-all ${activeHint === ind.id ? 'relative z-30 ring-1 ring-primary/5 bg-primary/[0.01]' : 'relative z-0'}`}
+                        >
                           <div className="flex items-start gap-4">
                             <span className="bg-primary text-white w-7 h-7 rounded-md flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
                               {ind.id}
@@ -365,14 +373,14 @@ export default function App() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
-                                        className="fixed inset-0 z-30 bg-black/5 backdrop-blur-[1px]" 
+                                        className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px]" 
                                         onClick={() => setActiveHint(null)} 
                                       />
                                       <motion.div
                                         initial={{ opacity: 0, y: 10, scale: 0.98 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                                        className="absolute left-0 right-0 top-full mt-2 bg-white border border-border-theme rounded-2xl shadow-2xl z-40 overflow-hidden"
+                                        className="absolute left-0 right-0 top-full mt-2 bg-white border border-border-theme rounded-2xl shadow-2xl z-50 overflow-hidden"
                                         style={{ width: 'calc(100% + 2rem)', right: '-1rem', left: '-1rem' }}
                                       >
                                         <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
@@ -433,7 +441,8 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-                ))}
+                );
+              })}
 
                 <div className="flex justify-between items-center pt-6 border-t border-border-theme gap-4">
                   <button
