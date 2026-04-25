@@ -344,11 +344,11 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={() => setActiveHint(activeHint === ind.id ? null : ind.id)}
-                                  className={`w-full p-4 bg-[#fdfdfd] border ${ratings[ind.id] ? "border-primary/30" : "border-border-theme"} rounded-xl text-right transition-all flex items-center justify-between gap-3 hover:border-primary/50 focus:ring-4 focus:ring-primary/10 select-none shadow-sm h-full min-h-[50px]`}
+                                  className={`w-full p-4 bg-[#fdfdfd] border ${ratings[ind.id] ? "border-primary/30" : "border-border-theme"} rounded-xl text-right transition-all flex items-center justify-between gap-3 hover:border-primary/50 focus:ring-4 focus:ring-primary/10 select-none shadow-sm min-h-[56px] h-auto relative z-20`}
                                 >
-                                  <div className="flex-1 overflow-hidden">
+                                  <div className="flex-1">
                                     {ratings[ind.id] ? (
-                                      <p className="text-sm font-bold text-primary leading-relaxed whitespace-normal">
+                                      <p className="text-sm font-bold text-primary leading-relaxed whitespace-normal break-words">
                                         {ind.options.find(o => o.value === ratings[ind.id])?.text}
                                       </p>
                                     ) : (
@@ -361,18 +361,22 @@ export default function App() {
                                 <AnimatePresence>
                                   {activeHint === ind.id && (
                                     <>
-                                      <div 
-                                        className="fixed inset-0 z-10" 
+                                      <motion.div 
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="fixed inset-0 z-30 bg-black/5 backdrop-blur-[1px]" 
                                         onClick={() => setActiveHint(null)} 
                                       />
                                       <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className="absolute left-0 right-0 top-full mt-2 bg-white border border-border-theme rounded-2xl shadow-2xl z-20 overflow-hidden"
+                                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                                        className="absolute left-0 right-0 top-full mt-2 bg-white border border-border-theme rounded-2xl shadow-2xl z-40 overflow-hidden"
+                                        style={{ width: 'calc(100% + 2rem)', right: '-1rem', left: '-1rem' }}
                                       >
-                                        <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
-                                          <div className="sticky top-0 bg-primary/5 px-4 py-2 border-b border-border-theme text-[10px] font-bold text-primary/70 uppercase tracking-wider backdrop-blur-md">
+                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                          <div className="sticky top-0 bg-primary/5 px-4 py-3 border-b border-border-theme text-[11px] font-bold text-primary/80 backdrop-blur-md">
                                             اختر الوصف الذي ينطبق على الممارسة:
                                           </div>
                                           {ind.options.map((opt) => (
@@ -390,24 +394,23 @@ export default function App() {
                                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold shadow-sm ${getRatingColor(opt.value)}`}>
                                                     {getRatingLabel(opt.value)}
                                                   </span>
-                                                  <div className={`w-2 h-2 rounded-full transition-all ${ratings[ind.id] === opt.value ? 'bg-primary scale-125 ring-4 ring-primary/20' : 'bg-transparent border border-gray-300'}`} />
+                                                  <div className={`w-2.5 h-2.5 rounded-full transition-all ${ratings[ind.id] === opt.value ? 'bg-primary scale-125 ring-4 ring-primary/20' : 'bg-transparent border border-gray-300'}`} />
                                                 </div>
-                                                {opt.hint && <Info size={12} className="text-primary/30" />}
                                               </div>
-                                              <p className={`text-sm leading-relaxed whitespace-normal transition-colors ${ratings[ind.id] === opt.value ? 'text-primary font-bold' : 'text-text group-hover/opt:text-primary'}`}>
+                                              <p className={`text-sm leading-relaxed whitespace-normal break-words transition-colors ${ratings[ind.id] === opt.value ? 'text-primary font-bold' : 'text-text group-hover/opt:text-primary'}`}>
                                                 {opt.text}
                                               </p>
                                               {opt.hint && (
-                                                <p className="text-[10px] text-gray-500 bg-gray-50 px-3 py-2 rounded-lg mt-1 border border-gray-200/50 italic leading-relaxed">
+                                                <div className="text-[10px] text-gray-500 bg-gray-50/80 px-3 py-2 rounded-lg mt-1 border border-gray-200/50 italic leading-relaxed">
                                                   <span className="font-bold text-primary/60 ml-1">توضيح:</span>
                                                   {opt.hint}
-                                                </p>
+                                                </div>
                                               )}
                                             </button>
                                           ))}
                                           {ind.hint && (
-                                            <div className="p-4 bg-amber-50/50 border-t border-amber-100">
-                                              <p className="text-[10px] text-amber-800 font-medium leading-relaxed italic">
+                                            <div className="p-4 bg-amber-50/50 border-t border-amber-100 italic">
+                                              <p className="text-[10px] text-amber-800 font-medium leading-relaxed">
                                                 💡 {ind.hint}
                                               </p>
                                             </div>
