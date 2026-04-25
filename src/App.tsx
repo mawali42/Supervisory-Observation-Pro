@@ -4,6 +4,7 @@ import {
   ClipboardCheck, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
   User, 
   Calendar, 
   BookOpen, 
@@ -338,77 +339,85 @@ export default function App() {
                           
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                             <div className="md:col-span-3 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <label className="hd-label text-xs opacity-60">وصف الانتشار</label>
-                                {ind.hint && (
-                                  <button 
-                                    onClick={() => setActiveHint(activeHint === ind.id ? null : ind.id)}
-                                    className={`p-1 rounded-full transition-colors ${activeHint === ind.id ? 'bg-primary text-white' : 'text-primary hover:bg-primary/10'}`}
-                                    title="توضيح وصف الانتشار"
-                                  >
-                                    <Info size={14} />
-                                  </button>
-                                )}
-                              </div>
-                              <select
-                                value={ratings[ind.id] || ""}
-                                onChange={(e) => handleRatingChange(ind.id, parseInt(e.target.value))}
-                                className="hd-input text-xs md:text-sm"
-                              >
-                                <option value="" disabled>اختر وصف الانتشار...</option>
-                                {ind.options.map(opt => (
-                                  <option key={opt.value} value={opt.value}>{opt.text}</option>
-                                ))}
-                              </select>
-
-                              {/* Dynamic Option-based Hint */}
-                              {ratings[ind.id] && ind.options.find(o => o.value === ratings[ind.id])?.hint && (
-                                <motion.div 
-                                  initial={{ opacity: 0, y: -5 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  className="mt-2 p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-[11px] text-emerald-800 leading-relaxed shadow-sm"
+                              <label className="hd-label text-xs opacity-60">وصف الانتشار</label>
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveHint(activeHint === ind.id ? null : ind.id)}
+                                  className={`w-full p-4 bg-[#fdfdfd] border ${ratings[ind.id] ? "border-primary/30" : "border-border-theme"} rounded-xl text-right transition-all flex items-center justify-between gap-3 hover:border-primary/50 focus:ring-4 focus:ring-primary/10 select-none shadow-sm h-full min-h-[50px]`}
                                 >
-                                  <div className="flex gap-2">
-                                    <div className="shrink-0 w-1 h-auto bg-emerald-400 rounded-full" />
-                                    <p className="font-medium">{ind.options.find(o => o.value === ratings[ind.id])?.hint}</p>
+                                  <div className="flex-1 overflow-hidden">
+                                    {ratings[ind.id] ? (
+                                      <p className="text-sm font-bold text-primary leading-relaxed whitespace-normal">
+                                        {ind.options.find(o => o.value === ratings[ind.id])?.text}
+                                      </p>
+                                    ) : (
+                                      <p className="text-sm text-gray-400">اختر وصف الانتشار من القائمة...</p>
+                                    )}
                                   </div>
-                                </motion.div>
-                              )}
+                                  <ChevronDown className={`shrink-0 text-primary/40 transition-transform duration-300 ${activeHint === ind.id ? 'rotate-180' : ''}`} size={18} />
+                                </button>
 
-                              <AnimatePresence>
-                                {activeHint === ind.id && (
-                                  <motion.div 
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    className="overflow-hidden"
-                                  >
-                                    <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3">
-                                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-primary/10">
-                                        <Info size={16} className="text-primary" />
-                                        <span className="text-xs font-bold text-primary italic">دليل التمييز بين مستويات وصف الانتشار:</span>
-                                      </div>
-                                      <div className="grid gap-2">
-                                        {ind.options.map((opt) => (
-                                          <div key={opt.value} className="flex gap-3 text-[11px] bg-white/50 p-2 rounded-lg border border-transparent hover:border-primary/20 transition-all">
-                                            <div className={`w-16 shrink-0 font-bold flex items-center justify-center rounded px-1 text-center text-[10px] ${getRatingColor(opt.value)}`}>
-                                              {getRatingLabel(opt.value)}
-                                            </div>
-                                            <div className="text-text leading-relaxed">
-                                              {opt.hint || opt.text}
-                                            </div>
+                                <AnimatePresence>
+                                  {activeHint === ind.id && (
+                                    <>
+                                      <div 
+                                        className="fixed inset-0 z-10" 
+                                        onClick={() => setActiveHint(null)} 
+                                      />
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute left-0 right-0 top-full mt-2 bg-white border border-border-theme rounded-2xl shadow-2xl z-20 overflow-hidden"
+                                      >
+                                        <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                                          <div className="sticky top-0 bg-primary/5 px-4 py-2 border-b border-border-theme text-[10px] font-bold text-primary/70 uppercase tracking-wider backdrop-blur-md">
+                                            اختر الوصف الذي ينطبق على الممارسة:
                                           </div>
-                                        ))}
-                                      </div>
-                                      {ind.hint && (
-                                        <div className="pt-2 mt-2 border-t border-primary/10 text-[10px] text-primary/70 font-medium text-center">
-                                          {ind.hint}
+                                          {ind.options.map((opt) => (
+                                            <button
+                                              key={opt.value}
+                                              type="button"
+                                              onClick={() => {
+                                                handleRatingChange(ind.id, opt.value);
+                                                setActiveHint(null);
+                                              }}
+                                              className={`w-full p-4 text-right border-b border-border-theme/50 last:border-0 hover:bg-primary/5 transition-all flex flex-col gap-2 group/opt ${ratings[ind.id] === opt.value ? 'bg-primary/5' : ''}`}
+                                            >
+                                              <div className="flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-2">
+                                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold shadow-sm ${getRatingColor(opt.value)}`}>
+                                                    {getRatingLabel(opt.value)}
+                                                  </span>
+                                                  <div className={`w-2 h-2 rounded-full transition-all ${ratings[ind.id] === opt.value ? 'bg-primary scale-125 ring-4 ring-primary/20' : 'bg-transparent border border-gray-300'}`} />
+                                                </div>
+                                                {opt.hint && <Info size={12} className="text-primary/30" />}
+                                              </div>
+                                              <p className={`text-sm leading-relaxed whitespace-normal transition-colors ${ratings[ind.id] === opt.value ? 'text-primary font-bold' : 'text-text group-hover/opt:text-primary'}`}>
+                                                {opt.text}
+                                              </p>
+                                              {opt.hint && (
+                                                <p className="text-[10px] text-gray-500 bg-gray-50 px-3 py-2 rounded-lg mt-1 border border-gray-200/50 italic leading-relaxed">
+                                                  <span className="font-bold text-primary/60 ml-1">توضيح:</span>
+                                                  {opt.hint}
+                                                </p>
+                                              )}
+                                            </button>
+                                          ))}
+                                          {ind.hint && (
+                                            <div className="p-4 bg-amber-50/50 border-t border-amber-100">
+                                              <p className="text-[10px] text-amber-800 font-medium leading-relaxed italic">
+                                                💡 {ind.hint}
+                                              </p>
+                                            </div>
+                                          )}
                                         </div>
-                                      )}
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
+                                      </motion.div>
+                                    </>
+                                  )}
+                                </AnimatePresence>
+                              </div>
                             </div>
                             <div className="space-y-2">
                               <label className="hd-label text-xs opacity-60 text-center">التقدير</label>
